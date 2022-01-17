@@ -15,7 +15,7 @@ poetry install
 ## Usage
 
 ```bash
-python src/stats.py --dictionary-path data/dictionary_fr.txt --word-length 8
+python src/stats.py --dictionary-path data/dictionary_fr_sutom.txt --word-length 8
 ```
 
 ## Contributing
