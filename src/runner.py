@@ -2,7 +2,7 @@
 import click
 
 # Local
-from worlde_assistant import WordleAssistant
+from wordle_assistant import WordleAssistant
 
 
 @click.command()
