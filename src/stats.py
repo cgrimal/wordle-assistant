@@ -17,6 +17,33 @@ def filter_word_length(dictionary: List[str], word_length: int) -> List[str]:
     return list(filter(lambda word: (len(word) == word_length), dictionary))
 
 
+def remove_absent_letters(
+    dictionary: List[str], absent_letters: List[str]
+) -> List[str]:
+    def foo(word: str) -> bool:
+        for absent_letter in absent_letters:
+            if absent_letter in word:
+                return False
+        return True
+
+    return list(filter(foo, dictionary))
+
+
+def keep_placed_letters(dictionary: List[str], reg: str) -> List[str]:
+    return list(filter(lambda word: re.match(reg, word), dictionary))
+
+
+def filter_misplaced_letters(
+    dictionary: List[str], letter: str, index: int
+) -> List[str]:
+    return list(
+        filter(
+            lambda word: word.find(letter) > 0 and word.find(letter) != index,
+            dictionary,
+        )
+    )
+
+
 def compute_global_frequencies(dictionary: List[str]) -> Dict[str, float]:
     frequencies = dict.fromkeys(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"), 0.0)
     all_words = "".join(dictionary)
@@ -39,19 +66,6 @@ def pretty_print_frequencies(frequencies: Dict[str, float], limit: int = 26) -> 
         click.secho(f"{letter}: {round(frequency * 100, 2)}%")
 
 
-def remove_absent_letters(dictionary: List[str], absent_letters: List[str]) -> List[str]:
-    def foo(word: str) -> bool:
-        for absent_letter in absent_letters:
-            if absent_letter in word:
-                return False
-        return True
-    return list(filter(foo, dictionary))
-
-
-def keep_placed_letters(dictionary: List[str], reg: re) -> List[str]:
-    return list(filter(lambda word: re.match(reg, word), dictionary))
-
-
 def score_words(dictionary: List[str]) -> Dict[str, float]:
     scores = dict.fromkeys(dictionary, 0.0)
     word_appearance_frequencies = compute_word_appearance_frequencies(dictionary)
@@ -59,10 +73,6 @@ def score_words(dictionary: List[str]) -> Dict[str, float]:
         score = sum(map(lambda letter: word_appearance_frequencies[letter], set(word)))
         scores[word] = score
     return scores
-
-
-def filter_misplaced_letters(dictionary: List[str], letter: str, index: int) -> List[str]:
-    return list(filter(lambda word: word.find(letter) > 0 and word.find(letter) != index, dictionary))
 
 
 @click.command()
@@ -84,7 +94,9 @@ def main(dictionary_path: str, word_length: int) -> None:
 
     reg = rf"^{reg_sub}$"
 
-    filtered_dictionary_2 = remove_absent_letters(filtered_dictionary, list(blacklist_letters))
+    filtered_dictionary_2 = remove_absent_letters(
+        filtered_dictionary, list(blacklist_letters)
+    )
     click.secho(
         f"Removing words with {'-'.join(list(blacklist_letters))}: {len(filtered_dictionary_2)}",
         bold=True,
@@ -100,7 +112,9 @@ def main(dictionary_path: str, word_length: int) -> None:
 
     filtered_dictionary_4 = filtered_dictionary_3
     for letter, index in misplaced_letters:
-        filtered_dictionary_4 = filter_misplaced_letters(filtered_dictionary_4, letter, index)
+        filtered_dictionary_4 = filter_misplaced_letters(
+            filtered_dictionary_4, letter, index
+        )
         click.secho(
             f"Keeping words with misplaced {letter} as letter {index+1}: {len(filtered_dictionary_4)}",
             bold=True,
