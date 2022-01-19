@@ -10,7 +10,9 @@ import click
 
 class WordleAssistant:
 
-    character_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    CHARACTER_LIST = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    GUESS_NUMBER = 10
+
     word_length: int
     word_list: List[str]
     word_scores: Dict[str, float]
@@ -28,7 +30,7 @@ class WordleAssistant:
         while len(self.word_list) > 1:
             click.secho(f"Words count: {len(self.word_list)}", bold=True, fg="green")
             click.secho("Your best guesses are:", bold=True, fg="green")
-            self._best_guesses(5)
+            self._best_guesses(self.GUESS_NUMBER)
             guess = click.prompt("Enter your guess          ", type=str)
             evaluation = click.prompt("Enter its evaluation (.!?)", type=str)
             for index, (letter, evaluation) in enumerate(zip(guess, evaluation)):
@@ -45,6 +47,12 @@ class WordleAssistant:
                     self.word_list = self._filter_misplaced_letters(
                         self.word_list, letter, index
                     )
+        try:
+            click.secho(f"THE SOLUTION: {self.word_list[0]}", bold=True, fg="red")
+        except IndexError:
+            click.secho(
+                "404 Solution not found (maybe you mistyped an evaluation?)", fg="red"
+            )
 
     def _best_guesses(self, guess_number: int = 5):
         self.word_scores = self._score_words(self.word_list)
@@ -63,7 +71,7 @@ class WordleAssistant:
         return scores
 
     def _compute_global_frequencies(self, word_list: List[str]) -> Dict[str, float]:
-        frequencies = dict.fromkeys(self.character_list, 0.0)
+        frequencies = dict.fromkeys(self.CHARACTER_LIST, 0.0)
         all_words = "".join(word_list)
         total_letters = len(all_words)
         for letter in frequencies:
@@ -112,9 +120,15 @@ class WordleAssistant:
     def _filter_misplaced_letters(
         word_list: List[str], letter: str, index: int
     ) -> List[str]:
+        def word_contains_misplaced_letter(word: str) -> bool:
+            for m in re.finditer(letter, word):
+                if m.start() == -1 or m.start() == index:
+                    return False
+            return True
+
         return list(
             filter(
-                lambda word: word.find(letter) > 0 and word.find(letter) != index,
+                word_contains_misplaced_letter,
                 word_list,
             )
         )
