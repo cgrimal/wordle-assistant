@@ -121,8 +121,12 @@ class WordleAssistant:
         word_list: List[str], letter: str, index: int
     ) -> List[str]:
         def word_contains_misplaced_letter(word: str) -> bool:
+            # letter must be in the word...
+            if letter not in word:
+                return False
+            # ...but not at the index
             for m in re.finditer(letter, word):
-                if m.start() == -1 or m.start() == index:
+                if m.start() == index:
                     return False
             return True
 
