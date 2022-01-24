@@ -33,9 +33,15 @@ class WordleAssistant:
             self._best_guesses(self.GUESS_NUMBER)
             guess = click.prompt("Enter your guess          ", type=str)
             evaluation = click.prompt("Enter its evaluation (.!?)", type=str)
-            for index, (letter, evaluation) in enumerate(zip(guess, evaluation)):
+            evaluation_tuples = list(zip(guess, evaluation))
+            for index, (letter, evaluation) in enumerate(evaluation_tuples):
                 if evaluation == ".":
-                    self.word_list = self._remove_absent_letters(self.word_list, letter)
+                    if (letter, "!") not in evaluation_tuples:
+                        self.word_list = self._remove_absent_letters(self.word_list, letter)
+                    else:
+                        self.word_list = self._filter_misplaced_letters(
+                            self.word_list, letter, index
+                        )
                 elif evaluation == "!":
                     pattern_list = ["."] * self.word_length
                     pattern_list[index] = letter
