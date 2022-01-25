@@ -1,8 +1,8 @@
 # Python standard lib
 import re
 from typing import Dict
+from typing import Iterable
 from typing import List
-from typing import Tuple
 
 # Third party
 import click
@@ -15,12 +15,12 @@ class WordleAssistant:
 
     word_length: int
     word_list: List[str]
-    word_scores: Dict[str, float]
-    guess_list: List[Tuple[str, List[bool]]]
+    word_list_entropy: List[str]
 
     def __init__(self, word_list_path: str):
         with open(word_list_path, "r") as word_list_file:
             self.word_list = word_list_file.read().splitlines()
+        self.word_list_entropy = self.word_list
 
     def play(self):
         click.secho(f"Words count: {len(self.word_list)}", bold=True, fg="green")
@@ -30,14 +30,25 @@ class WordleAssistant:
         while len(self.word_list) > 1:
             click.secho(f"Words count: {len(self.word_list)}", bold=True, fg="green")
             click.secho("Your best guesses are:", bold=True, fg="green")
-            self._best_guesses(self.GUESS_NUMBER)
+            self._best_guesses(self.word_list, self.GUESS_NUMBER)
+            if (
+                len(self.word_list_entropy) > 0
+                and self.word_list != self.word_list_entropy
+            ):
+                click.secho("You can also try new letters:", bold=True, fg="green")
+                self._best_guesses(self.word_list_entropy, 3)
             guess = click.prompt("Enter your guess          ", type=str)
             evaluation = click.prompt("Enter its evaluation (.!?)", type=str)
+            self.word_list_entropy = self._remove_absent_letters(
+                self.word_list_entropy, set(guess)
+            )
             evaluation_tuples = list(zip(guess, evaluation))
             for index, (letter, evaluation) in enumerate(evaluation_tuples):
                 if evaluation == ".":
                     if (letter, "!") not in evaluation_tuples:
-                        self.word_list = self._remove_absent_letters(self.word_list, letter)
+                        self.word_list = self._remove_absent_letters(
+                            self.word_list, letter
+                        )
                     else:
                         self.word_list = self._filter_misplaced_letters(
                             self.word_list, letter, index
@@ -60,9 +71,9 @@ class WordleAssistant:
                 "404 Solution not found (maybe you mistyped an evaluation?)", fg="red"
             )
 
-    def _best_guesses(self, guess_number: int = 5):
-        self.word_scores = self._score_words(self.word_list)
-        self._pretty_print_frequencies(self.word_scores, guess_number)
+    def _best_guesses(self, word_list: List[str], guess_number: int = 5):
+        word_scores = self._score_words(word_list)
+        self._pretty_print_frequencies(word_scores, guess_number)
 
     def _score_words(self, word_list: List[str]) -> Dict[str, float]:
         scores = dict.fromkeys(word_list, 0.0)
@@ -77,6 +88,8 @@ class WordleAssistant:
         return scores
 
     def _compute_global_frequencies(self, word_list: List[str]) -> Dict[str, float]:
+        if len(word_list) == 0:
+            return {}
         frequencies = dict.fromkeys(self.CHARACTER_LIST, 0.0)
         all_words = "".join(word_list)
         total_letters = len(all_words)
@@ -106,7 +119,7 @@ class WordleAssistant:
 
     @staticmethod
     def _remove_absent_letters(
-        word_list: List[str], absent_letters: List[str]
+        word_list: List[str], absent_letters: Iterable[str]
     ) -> List[str]:
         def word_does_not_contain_blacklist_letters(word: str) -> bool:
             for absent_letter in absent_letters:
